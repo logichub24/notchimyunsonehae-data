@@ -20,6 +20,8 @@ jobs:
       PUBLIC_DATA_API_KEY: ${{ secrets.PUBLIC_DATA_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check normalizer
+        run: python3 scripts/test_refresh_data.py
       - name: Fetch official data
         run: python3 scripts/refresh_data.py
       - name: Validate output
