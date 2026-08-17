@@ -1,0 +1,34 @@
+name: Refresh official data
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-official-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      CULTURE_API_KEY: ${{ secrets.CULTURE_API_KEY }}
+      PUBLIC_DATA_API_KEY: ${{ secrets.PUBLIC_DATA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch official data
+        run: python3 scripts/refresh_data.py
+      - name: Validate output
+        run: python3 -c "import json; data=json.load(open('official-data.json', encoding='utf-8')); assert data.get('checkedAt') and data.get('items')"
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- official-data.json; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add official-data.json
+          git commit -m "Refresh official data"
+          git push
